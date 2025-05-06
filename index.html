@@ -1,87 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flip Countdown Timer</title>
-  </head>
-  <body>
-    <div class="timer">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dual Timer</title>
+  <style>
+    body {
+      background-color: #222;
+      font-family: "Raleway", sans-serif;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .timer-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .timer {
+      display: flex;
+      gap: 24px;
+    }
+
+    .section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .digits {
+      display: flex;
+      gap: 8px;
+    }
+
+    .flip-card {
+      perspective: 1000px;
+    }
+
+    .card {
+      position: relative;
+      width: 50px;
+      height: 60px;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      font-size: 32px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      z-index: 2;
+    }
+
+    .card .number {
+      position: relative;
+      z-index: 1;
+      transition: transform 1s;
+    }
+
+    .card.flip .number {
+      transform: rotateX(-360deg);
+    }
+
+    .label {
+      margin-top: 12px;
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    /* BLACK THEME */
+    .black-theme {
+      background-color: #000;
+    }
+
+    .black-theme .card {
+      background: #fff;
+    }
+
+    .black-theme .card::before {
+      background: #000;
+    }
+
+    .black-theme .label {
+      color: #fff;
+    }
+
+    /* WHITE THEME */
+    .white-theme {
+      background-color: #fff;
+    }
+
+    .white-theme .card {
+      background: #000;
+      color: #fff;
+    }
+
+    .white-theme .card::before {
+      background: #fff;
+    }
+
+    .white-theme .label {
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Black Theme Timer -->
+  <div class="timer-container black-theme">
+    <div class="timer" id="blackTimer">
       <div class="section">
-        <div class="digits" id="days"></div>
+        <div class="digits" id="black-days"></div>
         <div class="label">Days</div>
       </div>
       <div class="section">
-        <div class="digits" id="hours"></div>
+        <div class="digits" id="black-hours"></div>
         <div class="label">Hours</div>
       </div>
       <div class="section">
-        <div class="digits" id="minutes"></div>
+        <div class="digits" id="black-minutes"></div>
         <div class="label">Mins</div>
       </div>
       <div class="section">
-        <div class="digits" id="seconds"></div>
+        <div class="digits" id="black-seconds"></div>
         <div class="label">Secs</div>
       </div>
     </div>
+  </div>
 
-    <script>
-      const targetDate = new Date();
-      targetDate.setSeconds(targetDate.getSeconds() + 1936966); // 22d 8h 32m 46s
+  <!-- White Theme Timer -->
+  <div class="timer-container white-theme">
+    <div class="timer" id="whiteTimer">
+      <div class="section">
+        <div class="digits" id="white-days"></div>
+        <div class="label">Days</div>
+      </div>
+      <div class="section">
+        <div class="digits" id="white-hours"></div>
+        <div class="label">Hours</div>
+      </div>
+      <div class="section">
+        <div class="digits" id="white-minutes"></div>
+        <div class="label">Mins</div>
+      </div>
+      <div class="section">
+        <div class="digits" id="white-seconds"></div>
+        <div class="label">Secs</div>
+      </div>
+    </div>
+  </div>
 
-      const sections = ["days", "hours", "minutes", "seconds"];
-      const previousValues = { days: "", hours: "", minutes: "", seconds: "" };
+  <script>
+    const targetDate = new Date();
+    targetDate.setSeconds(
+      targetDate.getSeconds() +
+        (18 * 24 * 60 * 60 + 8 * 60 * 60 + 32 * 60 + 46)
+    );
 
-      function createDigitElement(value) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "flip-card";
-        wrapper.innerHTML = `
+    function createDigitElement(value) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "flip-card";
+      wrapper.innerHTML = `
         <div class="card">
           <div class="number">${value}</div>
         </div>
-        `;
-        return wrapper;
-      }
+      `;
+      return wrapper;
+    }
 
-      function updateDigits(id, value) {
-        const padded = value.toString().padStart(2, "0");
-        const container = document.getElementById(id);
-        const prev = previousValues[id];
+    function updateDigits(timerPrefix, id, value, prevValues) {
+      const padded = value.toString().padStart(2, "0");
+      const container = document.getElementById(`${timerPrefix}-${id}`);
+      const prev = prevValues[id];
 
-        container.innerHTML = "";
-        padded.split("").forEach((digit, i) => {
-          const digitEl = createDigitElement(digit);
+      container.innerHTML = "";
+      padded.split("").forEach((digit, i) => {
+        const digitEl = createDigitElement(digit);
 
-          if (!prev || prev[i] !== digit) {
-            setTimeout(() => {
-              digitEl.querySelector(".card").classList.add("flip");
-            }, 20);
-          }
+        if (!prev || prev[i] !== digit) {
+          setTimeout(() => {
+            digitEl.querySelector(".card").classList.add("flip");
+          }, 20);
+        }
 
-          container.appendChild(digitEl);
+        container.appendChild(digitEl);
+      });
+
+      prevValues[id] = padded;
+    }
+
+    const previousValuesBlack = { days: "", hours: "", minutes: "", seconds: "" };
+    const previousValuesWhite = { days: "", hours: "", minutes: "", seconds: "" };
+
+    function updateTimer() {
+      const now = new Date();
+      const diff = targetDate - now;
+
+      if (diff <= 0) {
+        ["black", "white"].forEach(timer => {
+          updateDigits(timer, "days", 0, timer === "black" ? previousValuesBlack : previousValuesWhite);
+          updateDigits(timer, "hours", 0, timer === "black" ? previousValuesBlack : previousValuesWhite);
+          updateDigits(timer, "minutes", 0, timer === "black" ? previousValuesBlack : previousValuesWhite);
+          updateDigits(timer, "seconds", 0, timer === "black" ? previousValuesBlack : previousValuesWhite);
         });
-
-        previousValues[id] = padded;
+        return;
       }
 
-      function updateTimer() {
-        const now = new Date();
-        const diff = Math.max(0, targetDate - now);
+      const totalSeconds = Math.floor(diff / 1000);
+      const days = Math.floor(totalSeconds / (3600 * 24));
+      const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
 
-        const totalSeconds = Math.floor(diff / 1000);
-        const days = Math.floor(totalSeconds / (3600 * 24));
-        const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
+      updateDigits("black", "days", days, previousValuesBlack);
+      updateDigits("black", "hours", hours, previousValuesBlack);
+      updateDigits("black", "minutes", minutes, previousValuesBlack);
+      updateDigits("black", "seconds", seconds, previousValuesBlack);
 
-        updateDigits("days", days);
-        updateDigits("hours", hours);
-        updateDigits("minutes", minutes);
-        updateDigits("seconds", seconds);
-      }
+      updateDigits("white", "days", days, previousValuesWhite);
+      updateDigits("white", "hours", hours, previousValuesWhite);
+      updateDigits("white", "minutes", minutes, previousValuesWhite);
+      updateDigits("white", "seconds", seconds, previousValuesWhite);
+    }
 
-      updateTimer();
-      setInterval(updateTimer, 1000);
-    </script>
-  </body>
+    updateTimer();
+    setInterval(updateTimer, 1000);
+  </script>
+</body>
 </html>
